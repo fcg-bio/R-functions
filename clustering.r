@@ -107,6 +107,7 @@ createHeatMap <- function(mat,
           cluster_columns = dendC, 
           row_dend_width =  row_dend_width,
           column_dend_height =  column_dend_height,
+          name = '',
           ...)
   
   if(resCluster) { 
