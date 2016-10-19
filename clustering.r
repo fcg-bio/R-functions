@@ -2,8 +2,8 @@
 createHeatMap <- function(mat,
                           annot = NULL,
                           title = NULL,
-                          krow = 4,
-                          kcol = 2,
+                          krow = NULL,
+                          kcol = NULL,
                           limAbs = ceiling(max(abs(mat))),
                           heatCol = colorRamp2(
                             quantile(-limAbs:limAbs,seq(0,1, 0.10)),
