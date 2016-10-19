@@ -76,7 +76,7 @@ createHeatMap <- function(mat,
     dendC = dist(t(mat), method = clustering_distance_rows)
     dendC = hclust(dendC, method = clustering_method_rows)
     resClusterRes[['dendC']] <- dendC
-    dendC = color_branches(dendC, k = krow)
+    dendC = color_branches(dendC, k = kcol)
     
   } else {
     dendC = FALSE
