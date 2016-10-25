@@ -4,7 +4,7 @@ createHeatMap <- function(mat,
                           title = NULL,
                           krow = NULL,
                           kcol = NULL,
-                          limAbs = ceiling(max(abs(mat))),
+                          limAbs = ceiling(max(abs(mat), na.rm = TRUE)),
                           heatCol = colorRamp2(
                             quantile(-limAbs:limAbs,seq(0,1, 0.10)),
                             rev(brewer.pal(11, "RdBu"))),
