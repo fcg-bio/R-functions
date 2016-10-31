@@ -21,7 +21,20 @@ createHeatMap <- function(mat,
                           clustering_method_rows = "complete",
                           clustering_distance_columns = "euclidean",
                           clustering_method_columns = "complete",
+                          name = '',
+                          top_annotation_additional = NULL,
+                          top_annotation_height = unit(2, "char"),
+                          bottom_annotation_height = unit(2, "char"),
                           ...) {
+  
+  # top_annotation_additional
+            # list with additional annotations, plots for example :
+            #   top_annotation_additional <- list(
+            #     barplot1 = anno_barplot(colSums(geneSet.isSignificantUp), gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE),
+            #     barplot2 = anno_barplot(all.isSignificantUp, gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE)
+            #   )
+  
+  
   # Description
   # Wrapper function for Heatmap {ComplexHeatmap}
   
@@ -63,9 +76,17 @@ createHeatMap <- function(mat,
       colList[[colnames(annot)[j]]] <- cols
     }
     
-    ha = HeatmapAnnotation(df = annot,
-                           col = colList,
-                           show_legend = show_legend_annotation)
+    useAnnoList <- list(df = annot,
+                        col = colList,
+                        show_legend = show_legend_annotation)
+    
+    if(!is.null(top_annotation_additional)) 
+      useAnnoList <- c( useAnnoList, top_annotation_additional)
+
+      
+    ha <- do.call('HeatmapAnnotation', useAnnoList)
+
+    
   }
   if(bottomAnnotation) hb = ha
   
@@ -102,14 +123,14 @@ createHeatMap <- function(mat,
   res <- Heatmap(mat,
           col = heatCol,
           top_annotation = ha, 
-          top_annotation_height = unit(2, "char"),
+          top_annotation_height = top_annotation_height,
           bottom_annotation = hb, 
-          bottom_annotation_height = unit(2, "char"),
+          bottom_annotation_height = bottom_annotation_height,
           cluster_rows = dendR, 
           cluster_columns = dendC, 
           row_dend_width =  row_dend_width,
           column_dend_height =  column_dend_height,
-          name = '',
+          name = name,
           ...)
   
   if(resCluster) { 
