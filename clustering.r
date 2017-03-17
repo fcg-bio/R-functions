@@ -5,12 +5,14 @@ createHeatMap <- function(mat,
                           krow = NULL,
                           kcol = NULL,
                           limAbs = ceiling(max(abs(mat), na.rm = TRUE)),
+                          range = c(-limAbs, limAbs),
                           heatCol = colorRamp2(
-                            quantile(-limAbs:limAbs,seq(0,1, 0.10)),
+                            quantile(range[1]:range[2],seq(0,1, 0.10)),
                             rev(brewer.pal(11, "RdBu"))),
                           rowCluster = TRUE,
                           colCluster = TRUE,
                           multipalette = TRUE,
+                          usePaletteList = NULL,
                           palette.alpha = 1,
                           bottomAnnotation = FALSE,
                           show_legend_annotation = TRUE,
@@ -25,14 +27,16 @@ createHeatMap <- function(mat,
                           top_annotation_additional = NULL,
                           top_annotation_height = unit(2, "char"),
                           bottom_annotation_height = unit(2, "char"),
+                          dendR = NULL,
+                          dendC = NULL,
                           ...) {
   
   # top_annotation_additional
-            # list with additional annotations, plots for example :
-            #   top_annotation_additional <- list(
-            #     barplot1 = anno_barplot(colSums(geneSet.isSignificantUp), gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE),
-            #     barplot2 = anno_barplot(all.isSignificantUp, gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE)
-            #   )
+  # list with additional annotations, plots for example :
+  #   top_annotation_additional <- list(
+  #     barplot1 = anno_barplot(colSums(geneSet.isSignificantUp), gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE),
+  #     barplot2 = anno_barplot(all.isSignificantUp, gp = gpar(col = NA, fill = "#FFE200"),border = FALSE, axis = TRUE)
+  #   )
   
   
   # Description
@@ -52,27 +56,36 @@ createHeatMap <- function(mat,
   ha = new("HeatmapAnnotation")
   hb = new("HeatmapAnnotation")
   if(!is.null(annot)) {
-    # if(!multipalette) paletteList <- list("grenYll" = c('#4db6ac','#aed581','#dce775','#ffd54f'))
-    if(!multipalette) paletteList <- list('Moonrise2' = wes_palette("Moonrise2")[c(1,3,2)])
-    if(multipalette)  paletteList <- list(
-                                          'Moonrise2' = wes_palette("Moonrise2")[c(1,3,2)],
-                                          "Cavalcanti" = wes_palette("Cavalcanti"),
-                                          "Moonrise1" = wes_palette("Moonrise1"),
-                                          "Darjeeling" = wes_palette("Darjeeling"),
-                                          "Royal1" = wes_palette("Royal1"),
-                                          "FantasticFox" = wes_palette("FantasticFox"),
-                                          "Chevalier" = wes_palette("Chevalier")
-                                          )
+    
+    if(!multipalette) 
+      paletteList <- list('Moonrise2' = wes_palette("Moonrise2")[c(1,3,2)])
+    if(multipalette)  
+      paletteList <- list(
+        'Moonrise2' = wes_palette("Moonrise2")[c(1,3,2)],
+        "Cavalcanti" = wes_palette("Cavalcanti"),
+        "Moonrise1" = wes_palette("Moonrise1"),
+        "Darjeeling" = wes_palette("Darjeeling"),
+        "Royal1" = wes_palette("Royal1"),
+        "FantasticFox" = wes_palette("FantasticFox"),
+        "Chevalier" = wes_palette("Chevalier")
+      )
+    if(!is.null(usePaletteList))
+      paletteList <- usePaletteList
     
     colList = list()
     for (j in 1:ncol(annot)) {
-      gtab <- unique(annot[, j])
-      # colJ <- length(paletteList) - (j %% length(paletteList))
-      colJ <- j %% length(paletteList)
-      if (colJ == 0)
-        colJ <- length(paletteList)
-      cols <- alpha(colorRampPalette(paletteList[[colJ]])(length(gtab)), palette.alpha)
-      names(cols) <- gtab
+      if(!is.numeric(annot[, j])) {
+        gtab <- unique(annot[, j])
+        # colJ <- length(paletteList) - (j %% length(paletteList))
+        colJ <- j %% length(paletteList)
+        if (colJ == 0)
+          colJ <- length(paletteList)
+        cols <- scales::alpha(colorRampPalette(paletteList[[colJ]])(length(gtab)), palette.alpha)
+        names(cols) <- gtab
+      }
+      if(is.numeric(annot[, j])) {
+        cols <- colorRamp2(range(annot[, j]), c('#ffeda0', '#f03b20'))
+      }
       colList[[colnames(annot)[j]]] <- cols
     }
     
@@ -82,56 +95,58 @@ createHeatMap <- function(mat,
     
     if(!is.null(top_annotation_additional)) 
       useAnnoList <- c( useAnnoList, top_annotation_additional)
-
-      
+    
+    
     ha <- do.call('HeatmapAnnotation', useAnnoList)
-
+    
     
   }
   if(bottomAnnotation) hb = ha
   
   resClusterRes <- list()
   if(colCluster) {
-    # dendC = as.dist(1-cor(mat, use="complete.obs"))
-    # dendC = hclust(dendC, method="ward.2")
-    dendC = dist(t(mat), method = clustering_distance_rows)
-    dendC = hclust(dendC, method = clustering_method_rows)
-    resClusterRes[['dendC']] <- dendC
-    if(!is.null(kcol))
-      dendC = color_branches(dendC, k = kcol)
-    
+    if(is.null(dendC)) {
+      # dendC = as.dist(1-cor(mat, use="complete.obs"))
+      # dendC = hclust(dendC, method="ward.2")
+      dendC = dist(t(mat), method = clustering_distance_rows)
+      dendC = hclust(dendC, method = clustering_method_rows)
+      resClusterRes[['dendC']] <- dendC
+      if(!is.null(kcol))
+        dendC <- color_branches(dendC, k = kcol)
+    }
   } else {
-    dendC = FALSE
+    dendC <- FALSE
   }
   
   if(rowCluster) {
-    # dendR = as.dist(1-cor(t(mat), use="complete.obs"))
-    # dendR = hclust(dendR, method="ward.D2")
-    dendR = dist(mat, method = clustering_distance_columns)
-    dendR = hclust(dendR, method = clustering_method_columns)
-    resClusterRes[['dendR']] <- dendR
-    if(!is.null(krow))
-      dendR = color_branches(dendR, k = krow)
-    
+    if(is.null(dendR)) {
+      # dendR = as.dist(1-cor(t(mat), use="complete.obs"))
+      # dendR = hclust(dendR, method="ward.D2")
+      dendR = dist(mat, method = clustering_distance_columns)
+      dendR = hclust(dendR, method = clustering_method_columns)
+      resClusterRes[['dendR']] <- dendR
+      if(!is.null(krow))
+        dendR <- color_branches(dendR, k = krow)
+    }
   } else {
-    dendR = FALSE
+    dendR <- FALSE
   }
-
+  
   if(!rowCluster) dendR = FALSE
   
-
+  
   res <- Heatmap(mat,
-          col = heatCol,
-          top_annotation = ha, 
-          top_annotation_height = top_annotation_height,
-          bottom_annotation = hb, 
-          bottom_annotation_height = bottom_annotation_height,
-          cluster_rows = dendR, 
-          cluster_columns = dendC, 
-          row_dend_width =  row_dend_width,
-          column_dend_height =  column_dend_height,
-          name = name,
-          ...)
+                 col = heatCol,
+                 top_annotation = ha, 
+                 top_annotation_height = top_annotation_height,
+                 bottom_annotation = hb, 
+                 bottom_annotation_height = bottom_annotation_height,
+                 cluster_rows = dendR, 
+                 cluster_columns = dendC, 
+                 row_dend_width =  row_dend_width,
+                 column_dend_height =  column_dend_height,
+                 name = name,
+                 ...)
   
   if(resCluster) { 
     return(resClusterRes)
@@ -141,6 +156,7 @@ createHeatMap <- function(mat,
   
   
 }
+
 
 
 createClusteringReport <- function(x, annot, genes = row.names(x), prefix = "", doValidation = F, multipalette = F) {
