@@ -75,7 +75,11 @@ createHeatMap <- function(mat,
     colList = list()
     for (j in 1:ncol(annot)) {
       if(!is.numeric(annot[, j])) {
-        gtab <- unique(annot[, j])
+        if(is.factor(annot[, j])) {
+          gtab <- levels(annot[, j])
+        } else {
+          gtab <- unique(annot[, j])
+        }
         # colJ <- length(paletteList) - (j %% length(paletteList))
         colJ <- j %% length(paletteList)
         if (colJ == 0)
@@ -156,6 +160,12 @@ createHeatMap <- function(mat,
   
   
 }
+
+
+
+
+
+
 
 
 
