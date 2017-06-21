@@ -13,6 +13,7 @@ createHeatMap <- function(mat,
                           colCluster = TRUE,
                           multipalette = TRUE,
                           usePaletteList = NULL,
+                          usePaletteList.strict = TRUE,
                           palette.alpha = 1,
                           bottomAnnotation = FALSE,
                           show_legend_annotation = TRUE,
@@ -29,6 +30,9 @@ createHeatMap <- function(mat,
                           bottom_annotation_height = unit(2, "char"),
                           dendR = NULL,
                           dendC = NULL,
+                          dendR_color_branches_clusters=NULL,
+                          dendC_color_branches_clusters=NULL,
+                          annotation_legend_param = list(),
                           ...) {
   
   # top_annotation_additional
@@ -85,6 +89,8 @@ createHeatMap <- function(mat,
         if (colJ == 0)
           colJ <- length(paletteList)
         cols <- scales::alpha(colorRampPalette(paletteList[[colJ]])(length(gtab)), palette.alpha)
+        if(!is.null(usePaletteList) & usePaletteList.strict)
+          cols <- paletteList[[colJ]]
         names(cols) <- gtab
       }
       if(is.numeric(annot[, j])) {
@@ -95,7 +101,8 @@ createHeatMap <- function(mat,
     
     useAnnoList <- list(df = annot,
                         col = colList,
-                        show_legend = show_legend_annotation)
+                        show_legend = show_legend_annotation,
+                        annotation_legend_param = annotation_legend_param)
     
     if(!is.null(top_annotation_additional)) 
       useAnnoList <- c( useAnnoList, top_annotation_additional)
@@ -117,6 +124,8 @@ createHeatMap <- function(mat,
       resClusterRes[['dendC']] <- dendC
       if(!is.null(kcol))
         dendC <- color_branches(dendC, k = kcol)
+    } else {
+      dendC <- color_branches(dendC, clusters = dendC_color_branches_clusters)
     }
   } else {
     dendC <- FALSE
@@ -131,6 +140,8 @@ createHeatMap <- function(mat,
       resClusterRes[['dendR']] <- dendR
       if(!is.null(krow))
         dendR <- color_branches(dendR, k = krow)
+    } else {
+      dendR <- color_branches(as.dendrogram(dendR), clusters = dendR_color_branches_clusters)
     }
   } else {
     dendR <- FALSE
