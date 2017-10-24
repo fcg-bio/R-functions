@@ -160,6 +160,7 @@ createHeatMap <- function(mat,
                  ...)
   
   if(resCluster) { 
+    resClusterRes[['heatmap']] <- res
     return(resClusterRes)
   } else {
     return(res)
